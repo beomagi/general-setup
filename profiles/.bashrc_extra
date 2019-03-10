@@ -1,0 +1,60 @@
+export TERM='xterm-256color'
+
+color_prompt=yes;
+
+export ftrst='\e[0m'
+#256 color settings
+function cbg { echo "\e[48;5;${1}m"; }
+function cfg { echo "\e[38;5;${1}m"; }
+
+
+_user='\u'
+_host='\h'
+_wdir='\w'
+_pfwd='$PFWD'
+_gitd='$(__git_ps1)'
+_date='\D{%F %T}'
+promptident="`cfg 190`${_user}`cfg 202`@`cfg 190`${_host}${ftrst}"
+promptcurwd="`cfg 208``cbg 17`${_wdir}${ftrst}"
+promptptfwd="`cfg 196`[`cfg 206`${_pfwd}`cfg 161`]${ftrst}"
+promptgitwd="`cfg 226``cbg 52`${_gitd}${ftrst}"
+promptdttim="`cfg 82`${_date}${ftrst}"
+promptsym=`echo -e "\u2219"`
+  
+if [ -z "$PFWD" ]; then
+  PS1="${promptident} ${promptcurwd} ${promptgitwd} $promptdttim"'\n\[\033[0;32m\]└─\[\033[0m\033[0;32m\] \$\[\033[0m\033[0;32m\] ${promptsym}\[\033[0m\] '
+else
+  PS1="${promptident}${promptptfwd} ${promptcurwd} ${promptgitwd} $promptdttim"'\n\[\033[0;32m\]└─\[\033[0m\033[0;32m\] \$\[\033[0m\033[0;32m\] ${promptsym}\[\033[0m\] '
+fi
+
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+fi
+
+#colored GCC warnings and errors
+#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+weather=`curl -s wttr.in/hoboken` 
+echo "$weather" | head -17
+echo
+
+curdir=`pwd`
+echo -e "Importing custom functions:"
+cd ~/bashfuncs
+for bashfunc in `ls run*`; do
+  echo -e "From `cfg 99`${bashfunc}${ftrst}"
+  . "$bashfunc"
+  funcs=`grep -i "#DEFN" "$bashfunc"`
+  echo "$funcs" | while read afunc; do
+    defn=`echo $afunc | sed 's_^.*#DEFN __g'`
+    fnme=`echo "$afunc" | awk '{print $1}'`
+    padding="`cfg 59`........................."
+    fnme=`echo "${fnme}${padding}"|cut -c1-35`
+    echo -e "`cfg 82`${fnme}`cfg 187`${defn}${ftrst}"
+  done
+done
+echo
+cd "$curdir"
+cal
