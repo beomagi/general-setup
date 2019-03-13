@@ -16,6 +16,7 @@ spacechk () { #DEFN show space at the current or specified location
   colsizM=`cfg 220`
   colsizG=`cfg 197`
   colsizT=`cfg 196`
+  colsiz0=`cfg 150`
   namesizetable=$(echo "$flist" | while read fentry; do
     fspace=`du -h "$fentry" 2>/dev/null | tail -1 | awk '{print $1}'` #get total
     echo "$fspace $fentry"
@@ -25,13 +26,20 @@ spacechk () { #DEFN show space at the current or specified location
     fspace=`echo "$line"|awk '{print $1}'`
     fentry=`echo "$line"|cut -d ' ' -f2-99`
     padding='......................................................................'
-    colsize="$colsizT"
+    colsize="$colsiz0"
     if [[ "$fspace" == *"K"* ]]; then colsize="$colsizK"; fi
     if [[ "$fspace" == *"M"* ]]; then colsize="$colsizM"; fi
     if [[ "$fspace" == *"G"* ]]; then colsize="$colsizG"; fi
+    if [[ "$fspace" == *"T"* ]]; then colsize="$colsizT"; fi
     str1=`echo "${colfile}${fentry}${colpadd}${padding}" | cut -c1-80`
-    str2="${str1}${colsize}${fspace}"
-    echo -e "${str2}${ftrst}"
+    spaceused=`df -h --output=used,size "$fentry"| tail -1 | awk '{print $1 "/" $2}'`
+    mountpoint=`df -h --output=target "$fentry"| tail -1`
+    str2="${str1}${colsize}${fspace}${colpadd}${padding}"
+    str3=`echo "$str2" | cut -c1-115`
+    str4="${str3}${colsize}${spaceused}${colpadd}${padding}"
+    str5=`echo "$str4" | cut -c1-155`
+    str6="${str5}${colfile}${mountpoint}"
+    echo -e "${str6}${ftrst}"
   done
 }
 
