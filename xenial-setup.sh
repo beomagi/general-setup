@@ -7,7 +7,7 @@ sudo apt-get upgrade
 #media
 sudo apt-get -y install deadbeef vlc mpv youtube-dl gimp
 #dev stuff
-sudo apt-get -y install python python3 python-pip python3-pip vim vim-gtk git
+sudo apt-get -y install python python3 python-pip python3-pip vim vim-gtk git jq
 #network apps
 sudo apt-get -y install firefox curl wget rdesktop
 #other utils
