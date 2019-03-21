@@ -14,7 +14,7 @@ mkdir Shougo
 cd Shougo
 git clone https://github.com/Shougo/neocomplete.vim
 cd neocomplete.vim
-cp -r ./autocomplete/ ~/.vim
+cp -r ./autoload/ ~/.vim
 cp -r ./doc/ ~/.vim
 cp -r ./plugin/ ~/.vim
 cp -r ./test/ ~/.vim
