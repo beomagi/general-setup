@@ -35,3 +35,6 @@ set noshowmode
 
 "for-nerdtree
 map <C-o> :NERDTreeToggle<CR>
+
+"for neocomplete
+let g:neocomplete#enable_at_startup = 1
