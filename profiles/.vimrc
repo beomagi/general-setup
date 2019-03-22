@@ -24,7 +24,7 @@ syntax enable
 
 "for-colorschemes
 set background=dark
-colorscheme molokai
+colorscheme molokaibright2
 highlight Normal ctermbg=NONE
 highlight nonText ctermbg=NONE
 
