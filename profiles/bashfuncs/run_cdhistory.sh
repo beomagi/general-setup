@@ -20,7 +20,7 @@ cdl () { #DEFN List recent folders visited
 
 cdr () { #DEFN Go back a folder
   backup=`tail -1 $ccdhistoryfile`
-  cd $backup
+  builtin cd $backup
   head -n -1 $ccdhistoryfile > ${ccdhistoryfile}.swp
   mv ${ccdhistoryfile}.swp $ccdhistoryfile
 }
