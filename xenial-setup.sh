@@ -17,6 +17,8 @@ sudo apt autoremove
 cd ~
 mkdir gits
 cd gits
+mkdir beomagi
+cd beomagi
 git clone https://github.com/beomagi/general-setup
 
 
