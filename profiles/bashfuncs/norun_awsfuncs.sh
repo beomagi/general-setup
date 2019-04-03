@@ -20,7 +20,7 @@ awslogin () { #DEFN login to aws for cloudtool
   where=0
   if [[ "$1 $2" == *"emea"* ]]; then where=1; export REGION="eu-west-1"; echo $REGION > ~/params/region.txt ; fi
   if [[ "$1 $2" == *"amer"* ]]; then where=1; export REGION="us-east-1"; echo $REGION > ~/params/region.txt ; fi
-  if [[ "$1 $2" == *"apac"* ]]; then where=1; export REGION="ap-southeast-1"; echo $REGION > ~/params/region.txt ; fi
+  if [[ "$1 $2" == *"apac"* ]]; then where=1; export REGION="ap-southeast-2"; echo $REGION > ~/params/region.txt ; fi
   if [ $where -eq 0 ]; then
     echo "say emea, amer, apac... I've no idea where to connect to"
     return 1
