@@ -17,6 +17,7 @@ call plug#begin('~/.vim/plugged')
 Plug 'https://github.com/itchyny/lightline.vim'
 Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
 Plug 'wsdjeg/FlyGrep.vim'
+Plug 'junegunn/fzf', { 'do': 'yes \| ./install' }
 call plug#end()
 
 
@@ -38,3 +39,6 @@ map <C-o> :NERDTreeToggle<CR>
 
 "for neocomplete
 let g:neocomplete#enable_at_startup = 1
+
+"for fzf
+nnoremap <silent> <C-f> :FZF<CR>
