@@ -14,9 +14,9 @@
 set t_Co=256
 
 call plug#begin('~/.vim/plugged')
-Plug 'https://github.com/rafi/awesome-vim-colorschemes'
 Plug 'https://github.com/itchyny/lightline.vim'
 Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
+Plug 'wsdjeg/FlyGrep.vim'
 call plug#end()
 
 
