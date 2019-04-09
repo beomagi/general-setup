@@ -42,6 +42,30 @@ awslogin () { #DEFN login to aws for cloudtool
   echo "$trigger" | cloud-tool --region "$REGION" login --username "mgmt\m0094748" --password "$passwd"
 }
 
-awspass () { #DEFN
+awspass () { #DEFN Show current vault pass
   cat ~/pass.txt
 }
+
+
+awslistserverscache () { #DEFN use previously cached server list
+  cat /dev/shm/tmpserverlist.txt | jq ".Reservations[].Instances[]" | jq "." -c | while read line; do
+    LT=`echo $line | jq -r ".LaunchTime"`
+    IP=`echo $line | jq -r ".PrivateIpAddress"`
+    AMI=`echo $line | jq -r ".ImageId"`
+    TYP=`echo $line | jq -r ".InstanceType"`
+    NME=`echo $line | jq ".Tags[]" -c | grep '"Key":"Name"' | jq ".Value" -r`
+    spc="............................................................................................."
+    out=`echo "${NME}${spc}" | cut -c1-40`
+    out=`echo "${out}${IP}${spc}" | cut -c1-58`
+    out=`echo "${out}${AMI}${spc}" | cut -c1-83`
+    out=`echo "${out}${LT}${spc}" | cut -c1-111`
+    out=`echo "${out}${TYP}"`
+    echo "$out"
+  done | sort
+}
+
+awslistservers () { #DEFN list of EAP servers
+  aws ec2 describe-instances --filters Name=tag:tr:project-name,Values=EAP > /dev/shm/tmpserverlist.txt
+  awslistserverscache
+}
+
