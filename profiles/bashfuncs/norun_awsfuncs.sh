@@ -65,6 +65,7 @@ awslistserverscache () { #DEFN use previously cached server list
 }
 
 awslistservers () { #DEFN list of EAP servers
+  echo "Region: $REGION"
   aws ec2 describe-instances --filters Name=tag:tr:project-name,Values=EAP > /dev/shm/tmpserverlist.txt
   awslistserverscache
 }
