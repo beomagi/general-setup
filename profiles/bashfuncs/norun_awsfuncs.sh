@@ -49,16 +49,18 @@ awspass () { #DEFN Show current vault pass
 
 awslistserverscache () { #DEFN use previously cached server list
   cat /dev/shm/tmpserverlist.txt | jq ".Reservations[].Instances[]" | jq "." -c | while read line; do
-    LT=`echo $line | jq -r ".LaunchTime"`
+    LT=`echo $line | jq -r ".LaunchTime"| sed 's_.000Z__g'`
     IP=`echo $line | jq -r ".PrivateIpAddress"`
     AMI=`echo $line | jq -r ".ImageId"`
     TYP=`echo $line | jq -r ".InstanceType"`
+    IID=`echo $line | jq -r ".InstanceId"`
     NME=`echo $line | jq ".Tags[]" -c | grep '"Key":"Name"' | jq ".Value" -r`
     spc="............................................................................................."
-    out=`echo "${NME}${spc}" | cut -c1-40`
-    out=`echo "${out}${IP}${spc}" | cut -c1-58`
-    out=`echo "${out}${AMI}${spc}" | cut -c1-83`
-    out=`echo "${out}${LT}${spc}" | cut -c1-111`
+    out=`echo "${NME}${spc}" | cut -c1-38`
+    out=`echo "${out}${IP}${spc}" | cut -c1-55`
+    out=`echo "${out}${AMI}${spc}" | cut -c1-78`
+    out=`echo "${out}${LT}${spc}" | cut -c1-99`
+    out=`echo "${out}${IID}${spc}" | cut -c1-120`
     out=`echo "${out}${TYP}"`
     echo "$out"
   done | sort
