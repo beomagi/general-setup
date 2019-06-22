@@ -42,3 +42,10 @@ let g:neocomplete#enable_at_startup = 1
 
 "for fzf
 nnoremap <silent> <C-f> :FZF<CR>
+
+
+"highlight current line
+set cursorline
+hi CursorLine   cterm=NONE ctermbg=235
+hi CursorColumn cterm=NONE ctermbg=235
+nnoremap <Leader>c :set cursorline! cursorcolumn!<CR>
