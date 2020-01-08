@@ -21,8 +21,9 @@ awslogin () { #DEFN login to aws for cloudtool
   if [[ "$1 $2" == *"emea"* ]]; then where=1; export REGION="eu-west-1"; echo $REGION > ~/params/region.txt ; fi
   if [[ "$1 $2" == *"amer"* ]]; then where=1; export REGION="us-east-1"; echo $REGION > ~/params/region.txt ; fi
   if [[ "$1 $2" == *"apac"* ]]; then where=1; export REGION="ap-southeast-2"; echo $REGION > ~/params/region.txt ; fi
+  if [[ "$1 $2" == *"sing"* ]]; then where=1; export REGION="ap-southeast-1"; echo $REGION > ~/params/region.txt ; fi
   if [ $where -eq 0 ]; then
-    echo "say emea, amer, apac... I've no idea where to connect to"
+    echo "say emea, amer, apac, sing... I've no idea where to connect to"
     return 1
   fi
   trigger=0
@@ -70,5 +71,21 @@ awslistservers () { #DEFN list of EAP servers
   echo "Region: $REGION"
   aws ec2 describe-instances --filters Name=tag:tr:project-name,Values=EAP > /dev/shm/tmpserverlist.txt
   awslistserverscache
+}
+
+awsvalidatetemplate () { #DEFN validata template file
+  aws cloudformation validate-template --template-body file://$1
+}
+
+
+awstunnel2id(){ #DEFN setup a cloud-tool bastion tunnnel for RDP. Pass instance-ID [alternalte port]
+    insid=$1
+    portalternate=$2
+    $2 && portalternate=3389
+    idinfo=`aws ec2 describe-instances --instance-ids $insid`
+    idip=`echo "$idinfo" | jq -r ".Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress"`
+    keyname=`aws ec2 describe-instances --instance-id $insid | grep KeyName | awk '{print $2}' | tr -d '",'`
+    aws ec2 get-password-data --instance-id  $insid --priv-launch-key ~/gits/eap_secure/ec2_ssh_keys/${keyname}.pem | jq -r ".PasswordData"
+    cloud-tool --region "$REGION" --profile $AWS_PROFILE ssh-tunnel -b $idip -j -q 3389 -r 3399
 }
 
