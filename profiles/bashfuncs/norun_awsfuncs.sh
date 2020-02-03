@@ -90,8 +90,15 @@ awstunnel2id(){ #DEFN setup a cloud-tool bastion tunnnel for RDP. Pass instance-
 }
 
 awsalarms(){
+(
     for leregions in us-east-1 eu-west-1 ap-southeast-1 ap-southeast-2; do
-        echo "$leregions"
-        aws cloudwatch describe-alarms --region $leregions --alarm-name-prefix eap | jq -c ".[][]|({name: .AlarmName, state: .StateValue})" | grep '"ALARM"'
+        aws cloudwatch describe-alarms --region $leregions --alarm-name-prefix eap | jq -c ".[][]|({name: .AlarmName, state: .StateValue})" | grep '"ALARM"' \
+        > /dev/shm/tmpcwalarms_$leregions & 
+    done 
+    wait
+    for leregions in us-east-1 eu-west-1 ap-southeast-1 ap-southeast-2; do
+	echo $leregions
+	cat /dev/shm/tmpcwalarms_$leregions
     done
+)
 }
