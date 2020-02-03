@@ -89,3 +89,9 @@ awstunnel2id(){ #DEFN setup a cloud-tool bastion tunnnel for RDP. Pass instance-
     cloud-tool --region "$REGION" --profile $AWS_PROFILE ssh-tunnel -b $idip -j -q 3389 -r $portalternate
 }
 
+awsalarms(){
+    for leregions in us-east-1 eu-west-1 ap-southeast-1 ap-southeast-2; do
+        echo "$leregions"
+        aws cloudwatch describe-alarms --region $leregions --alarm-name-prefix eap | jq -c ".[][]|({name: .AlarmName, state: .StateValue})" | grep '"ALARM"'
+    done
+}
