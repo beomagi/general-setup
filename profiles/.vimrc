@@ -18,6 +18,7 @@ Plug 'https://github.com/itchyny/lightline.vim'
 Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
 Plug 'wsdjeg/FlyGrep.vim'
 Plug 'junegunn/fzf', { 'do': 'yes \| ./install' }
+Plug 'tpope/vim-fugitive'
 call plug#end()
 
 
@@ -43,9 +44,8 @@ let g:neocomplete#enable_at_startup = 1
 "for fzf
 nnoremap <silent> <C-f> :FZF<CR>
 
-
-"highlight current line
 set cursorline
-hi CursorLine   cterm=NONE ctermbg=235
-hi CursorColumn cterm=NONE ctermbg=235
-nnoremap <Leader>c :set cursorline! cursorcolumn!<CR>
+hi cursorline cterm=none term=none
+autocmd WinEnter * setlocal cursorline
+autocmd WinLeave * setlocal nocursorline
+highlight CursorLine guibg=#303000 ctermbg=234

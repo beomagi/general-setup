@@ -37,17 +37,6 @@ fi
 #colored GCC warnings and errors
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
-#weatherfile="/dev/shm/weather.store"
-#if [ ! -f $weatherfile ]; then
-#  curl -s wttr.in/hoboken > $weatherfile
-#fi
-#weatherfileage=`find "/dev/shm/weather.store" -mmin +10`
-#if [ ! -z $weatherfileage ]; then
-#  curl -s wttr.in/hoboken > $weatherfile
-#fi
-#cat $weatherfile | head -17
-echo
-
 curdir=`pwd`
 echo -e "Importing custom functions:"
 cd ~/bashfuncs
