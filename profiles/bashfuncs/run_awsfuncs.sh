@@ -42,17 +42,17 @@ awslogin () { #DEFN login to aws for cloudtool
   trigger=0
   if [[ "$1 $2" == *"nonprod"* ]] || [[ "$1 $2" == *"preprod"* ]]; then 
     awssetnonprod; 
-    trigger=8 #this value for NONPROD role selection
+    trigger=5 #this value for NONPROD role selection
   else
     if [[ "$1 $2" == *"prod"* ]]; then 
       awssetprod;
-      trigger=17 #this value for PROD role selection
+      trigger=14 #this value for PROD role selection
     fi
   fi
 
   if [[ "$1 $2" == *"awssm_sb"* ]]; then
     awssetawssm_sb;
-    trigger=20 
+    trigger=17 
   fi
 
   if [ $trigger -eq 0 ]; then
@@ -74,7 +74,10 @@ awsloginmanual () { #DEFN login to aws for cloudtool
     echo "say emea, amer, apac, sing... I've no idea where to connect to"
     return 1
   fi
-  cloud-tool --region "$REGION" login --username "mgmt\m0094748" --password "$passwd"
+  unset AWS_DEFAULT_PROFILE
+  cloud-tool --region "$REGION" login --username "mgmt\m0094748" --password "$passwd" | tee /dev/shm/ctlogin.txt
+  profileset=`cat /dev/shm/ctlogin.txt | grep "To use this cred" | sed 's_.*aws --profile __' | sed 's_ .*__'`
+  awssetnonmanual $profileset
 }
 
 
