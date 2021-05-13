@@ -2,7 +2,7 @@ export tmpfs=/dev/shm
 if [ ! -e "$tmpfs" ]; then export tmpfs=/tmp; fi
 
 
-awssetnonmanual () { #DEFN
+awssetnonmanual () { #DEFN set AWS_DEFAULT_PROFILE env variable to passed string
   export AWS_DEFAULT_PROFILE="$1"
   export AWS_PROFILE="$1"
   echo $AWS_PROFILE > ${tmpfs}/AWS_PROFILE.txt
@@ -46,7 +46,7 @@ awsamiage () { #DEFN get the creation date of an ami image
   aws ec2 describe-images --image-ids $1  2>/dev/null | jq -r ".Images[].CreationDate" 2>/dev/null
 }
 
-awsamiagec() { #DEFN get the creation date and cache the result. Pull from cache if available
+awsamiagec () { #DEFN get the creation date and cache the result. Pull from cache if available
   cachecheck=`grep "\"$1\"" /${HOME}/amicache 2>/dev/null`
   if [[ "$cachecheck" == "" ]]; then 
     amidate=`awsamiage $1`
@@ -123,7 +123,7 @@ awsvalidatetemplate () { #DEFN validata template file
   aws cloudformation validate-template --template-body file://$1
 }
 
-awstunnel2id(){ #DEFN setup a cloud-tool bastion tunnnel for RDP. Pass instance-ID [alternalte port]
+awstunnel2id (){ #DEFN setup a cloud-tool bastion tunnnel for RDP. Pass instance-ID [alternalte port]
     insid=$1
     portalternate=$2
     $2 && portalternate=3399
@@ -134,17 +134,17 @@ awstunnel2id(){ #DEFN setup a cloud-tool bastion tunnnel for RDP. Pass instance-
     cloud-tool --region "$AWS_DEFAULT_REGION" --profile $AWS_PROFILE ssh-tunnel -b $idip -j -q 3389 -r $portalternate
 }
 
-awsrdp2id(){
+awsrdp2idi (){ #DEFN setup a tunnel to an instance it, and launch remmina remote desktop client
     awstunnel2id $1
     sleep 1
     remmina -c /home/jumper/lt.remmina
 }
 
-awsalarms(){
+awsalarms (){ #DEFN Get all AWS alarms that match certain strings and output them for several regions
 (
     for leregions in us-east-1 eu-west-1 ap-southeast-1; do
         alfile=${tmpfs}/tmpcwalarms_$leregions
-	rm $alfile
+	rm $alfile 2>/dev/null
         aws cloudwatch describe-alarms --region $leregions --alarm-name-prefix eap | jq -c ".[][]|({name: .AlarmName, state: .StateValue})" | grep '"ALARM"' >> $alfile & 
         aws cloudwatch describe-alarms --region $leregions --alarm-name-prefix a204821 | jq -c ".[][]|({name: .AlarmName, state: .StateValue})" | grep '"ALARM"' >> $alfile & 
     done 
