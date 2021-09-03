@@ -1,0 +1,9 @@
+if [[ "$TMUX" == "" ]]; then tmux; fi
+
+. ${HOME}/.bashrc_extra
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0
+export WINHOST=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')
+export LIBGL_ALWAYS_INDIRECT=1
+
