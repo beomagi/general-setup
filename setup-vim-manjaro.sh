@@ -10,6 +10,11 @@ curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.c
 mkdir ~/.vim/colors
 cp molokaibright2.vim ~/.vim/colors/ 
 
+
+pip3 install --user pynvim
+pip3 install --user msgpack
+
+
 cd ~
 mkdir .vim
 mkdir gits
