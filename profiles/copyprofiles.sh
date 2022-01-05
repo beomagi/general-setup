@@ -1,5 +1,5 @@
 #!/bin/bash
 cp -r ./bashfuncs ~/
-cp .bashrc_extra ~
+cp .bashrc_* ~
 cp .vimrc ~
 cp .tmux.conf ~
