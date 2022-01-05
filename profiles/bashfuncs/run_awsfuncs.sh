@@ -1,6 +1,12 @@
 export tmpfs=/dev/shm
 if [ ! -e "$tmpfs" ]; then export tmpfs=/tmp; fi
 
+export cloudtoolopts=/home/jumper/cloudtool-opts.txt
+export ct_eappreprod=`cat $cloudtoolopts  | grep 060725138335 | grep "204821-PowerUser " | tr -d '[]:' | awk '{print $1}'`
+export ct_eapprod=`cat $cloudtoolopts  | grep 304853478528 | grep "204821-PowerUser " | tr -d '[]:' | awk '{print $1}'`
+export ct_dataminer=`cat $cloudtoolopts  | grep 910031690486 | grep "a205561-PowerUser2 "  | tr -d '[]:' | awk '{print $1}'`
+
+
 
 awssetnonmanual () { #DEFN set AWS_DEFAULT_PROFILE env variable to passed string
   export AWS_DEFAULT_PROFILE="$1"
@@ -13,12 +19,19 @@ awsloginserver () { #DEFN login to a server by IP
   cloud-tool --profile $AWS_PROFILE ssh --private-ip "$1"
 }
 
+awssession () { #DEFN login to a server using AWS session manager
+  aws ssm start-session --target $1
+}
+
 awsloginmanual () { #DEFN login to aws for cloudtool
   passwd=`cat ${HOME}/pass.txt`
   where=0
+  if [[ "$1 $2" == *"eu-west-1"* ]]; then where=1; REGION="eu-west-1"; fi
   if [[ "$1 $2" == *"emea"* ]]; then where=1; REGION="eu-west-1"; fi
+  if [[ "$1 $2" == *"us-east-1"* ]]; then where=1; REGION="us-east-1"; fi
   if [[ "$1 $2" == *"amer"* ]]; then where=1; REGION="us-east-1"; fi
-  if [[ "$1 $2" == *"apac"* ]]; then where=1; REGION="ap-southeast-2"; fi
+  if [[ "$1 $2" == *"apac"* ]]; then where=1; REGION="ap-southeast-1"; fi
+  if [[ "$1 $2" == *"ap-southeast-1"* ]]; then where=1; REGION="ap-southeast-1"; fi
   if [[ "$1 $2" == *"sing"* ]]; then where=1; REGION="ap-southeast-1"; fi
   if [ $where -eq 0 ]; then
     echo "say emea, amer, apac, sing... I've no idea where to connect to"
@@ -35,6 +48,7 @@ awsloginmanual () { #DEFN login to aws for cloudtool
 }
 
 awsregion () { #DEFN set aws_default_region value
+  REGION="$1"
   if [[ "$1 $2" == *"emea"* ]]; then where=1; REGION="eu-west-1"; fi
   if [[ "$1 $2" == *"amer"* ]]; then where=1; REGION="us-east-1"; fi
   if [[ "$1 $2" == *"apac"* ]]; then where=1; REGION="ap-southeast-2"; fi
@@ -63,19 +77,19 @@ awsamiagec () { #DEFN get the creation date and cache the result. Pull from cach
 
 #note options here are piped into login, so login subprocess variables won't hold and must be set again after
 awslogineapnonprod () {
-   echo 5 | awsloginmanual $1
+   echo $ct_eappreprod | awsloginmanual $1
    awssetnonmanual "`cat ${tmpfs}/AWS_PROFILE.txt`"
    awsregion $1
 }
 
 awslogineapprod () {
-  echo 14 | awsloginmanual $1
+  echo $ct_eapprod | awsloginmanual $1
    awssetnonmanual "`cat ${tmpfs}/AWS_PROFILE.txt`"
    awsregion $1
 }
 
-awslogindataminernonprod () {
-  echo 33 | awsloginmanual $1
+awslogindataminer () {
+  echo $ct_dataminer | awsloginmanual $1
    awssetnonmanual "`cat ${tmpfs}/AWS_PROFILE.txt`"
    awsregion $1
 }
@@ -86,37 +100,14 @@ awspass () { #DEFN Show current vault pass
 }
 
 
-awslistserverscache () { #DEFN use previously cached server list
-  cat ${tmpfs}/tmpserverlist.txt | jq ".Reservations[].Instances[]" | jq "." -c | while read line; do
-    LT=`echo $line | jq -r ".LaunchTime"| sed 's_.000Z__g'`
-    IP=`echo $line | jq -r ".PrivateIpAddress"`
-    AMI=`echo $line | jq -r ".ImageId"`
-    AMID=`awsamiagec $AMI`
-    TYP=`echo $line | jq -r ".InstanceType"`
-    IID=`echo $line | jq -r ".InstanceId"`
-    NME=`echo $line | jq ".Tags[]" -c | grep '"Key":"Name"' | jq ".Value" -r`
-    spc="                                                                              "
-    out=`echo "${NME}${spc}" | cut -c1-35`
-    out=`echo "${out}${IP}${spc}" | cut -c1-52`
-    out=`echo "${out}${AMI}${spc}" | cut -c1-77`
-    out=`echo "${out}${AMID}${spc}" | cut -c1-102`
-    out=`echo "${out}${LT}${spc}" | cut -c1-131`
-    out=`echo "${out}${IID}${spc}" | cut -c1-152`
-    out=`echo "${out}${TYP}"`
-    echo "$out"
-  done | sort
-}
-
-awslistservers () { #DEFN list of EAP servers
+awsecsinfo () { #DEFN list of EAP servers
   echo "Region: $AWS_DEFAULT_REGION"
-  aws ec2 describe-instances --filters Name=tag:tr:application-asset-insight-id,Values=204821 > ${tmpfs}/tmpserverlist.txt
-  awslistserverscache
+  ${HOME}/bashfuncs/ecshealth.py $@
 }
 
 awslistserversall () { #DEFN list of EAP servers
   echo "Region: $AWS_DEFAULT_REGION"
-  aws ec2 describe-instances > ${tmpfs}/tmpserverlist.txt
-  awslistserverscache
+  ${HOME}/bashfuncs/ec2lister.py $@
 }
 
 awsvalidatetemplate () { #DEFN validata template file
