@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import boto3
 import sys
-import json
+import os
 
 tablepad="  "
 spacepad=" "
+region="";
 
 
 def tabledisplay(table):
@@ -29,7 +30,7 @@ def tabledisplay(table):
 
 
 def getclusterservices(clustername):
-    client = boto3.client('ecs')
+    client = boto3.client('ecs',region_name=region)
     slistresponse = client.list_services(cluster=clustername,maxResults=100)
     slist=slistresponse.get('serviceArns',[])
     while slistresponse.get('nextToken')!=None:
@@ -49,12 +50,13 @@ def getclusterservices(clustername):
             sinfo['running']=aservice.get('runningCount')
             sinfo['pending']=aservice.get('pendingCount')
             serviceinfo.append(sinfo)
+    serviceinfo=sorted(serviceinfo,key=lambda k:k["sname"])
     return serviceinfo
 
 
 
 def getclusterinfo(filter):
-    client = boto3.client('ecs')
+    client = boto3.client('ecs',region_name=region)
     clusterlist=[]
     clistresp = client.list_clusters()
     clusterlist += clistresp.get('clusterArns',[])
@@ -66,6 +68,7 @@ def getclusterinfo(filter):
         for myclust in args:
             if myclust in clusterarn:
                 chosenlist.append(clusterarn)
+    chosenlist.sort()
 
     clusresp = client.describe_clusters(clusters=chosenlist,include=['ATTACHMENTS','CONFIGURATIONS','SETTINGS','STATISTICS','TAGS'])
     clusterinfo=clusresp.get('clusters',[])
@@ -84,9 +87,11 @@ def getclusterinfo(filter):
             if fil in str(cinfo):
                 add=True
         if add: organizedcinfo.append(cinfo)
+    organizedcinfo=sorted(organizedcinfo,key=lambda k:k["cname"])
     return(organizedcinfo)
 
 def displaynice(odata):
+    print(region)
     for acluster in odata:
         name=acluster.get("cname")
         ec2s=acluster.get("instances")
@@ -103,6 +108,9 @@ def displaynice(odata):
 
 if __name__=="__main__":
     args=sys.argv[1:]
+    region=os.environ['AWS_DEFAULT_REGION']
+    if args[0].startswith("-region="):
+        region=args[0].split("=")[1]
     organized=getclusterinfo(args)
     displaynice(organized)
 

@@ -2,11 +2,31 @@ export tmpfs=/dev/shm
 if [ ! -e "$tmpfs" ]; then export tmpfs=/tmp; fi
 
 export cloudtoolopts=/home/jumper/cloudtool-opts.txt
+#EAP accounts
 export ct_eappreprod=`cat $cloudtoolopts  | grep 060725138335 | grep "204821-PowerUser " | tr -d '[]:' | awk '{print $1}'`
-export ct_eapprod=`cat $cloudtoolopts  | grep 304853478528 | grep "204821-PowerUser " | tr -d '[]:' | awk '{print $1}'`
-export ct_dataminer=`cat $cloudtoolopts  | grep 910031690486 | grep "a205561-PowerUser2 "  | tr -d '[]:' | awk '{print $1}'`
+export    ct_eapprod=`cat $cloudtoolopts  | grep 304853478528 | grep "204821-PowerUser " | tr -d '[]:' | awk '{print $1}'`
+#Dataminer
+export  ct_dataminer=`cat $cloudtoolopts  | grep 910031690486 | grep "a205561-PowerUser2"  | tr -d '[]:' | awk '{print $1}'`
+#NewsRoom
+export ct_nr_cicdprod_202333=`cat $cloudtoolopts  | grep 556060016006 | grep "a202333-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
+export  ct_nr_preprod_202333=`cat $cloudtoolopts  | grep 426942580712 | grep "a202333-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
+export     ct_nr_prod_202333=`cat $cloudtoolopts  | grep 041916277582 | grep "a202333-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
 
+export ct_nr_cicdprod_202909=`cat $cloudtoolopts  | grep 556060016006 | grep "a202909-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
+export  ct_nr_preprod_202909=`cat $cloudtoolopts  | grep 426942580712 | grep "a202909-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
+export     ct_nr_prod_202909=`cat $cloudtoolopts  | grep 041916277582 | grep "a202909-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
 
+export ct_nr_cicdprod_208210=`cat $cloudtoolopts  | grep 556060016006 | grep "a208210-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
+export  ct_nr_preprod_208210=`cat $cloudtoolopts  | grep 426942580712 | grep "a208210-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
+export     ct_nr_prod_208210=`cat $cloudtoolopts  | grep 041916277582 | grep "a208210-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
+
+export ct_nr_cicdprod_208193_NFS=`cat $cloudtoolopts  | grep 556060016006 | grep "a208193-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
+export  ct_nr_preprod_208193_NFS=`cat $cloudtoolopts  | grep 426942580712 | grep "a208193-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
+export     ct_nr_prod_208193_NFS=`cat $cloudtoolopts  | grep 041916277582 | grep "a208193-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
+
+export ct_nr_cicdprod_208187_nmc=`cat $cloudtoolopts  | grep 556060016006 | grep "a208187-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
+export  ct_nr_preprod_208187_nmc=`cat $cloudtoolopts  | grep 426942580712 | grep "a208187-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
+export     ct_nr_prod_208187_nmc=`cat $cloudtoolopts  | grep 041916277582 | grep "a208187-PowerUser2" | tr -d '[]:' | awk '{print $1}'`
 
 awssetnonmanual () { #DEFN set AWS_DEFAULT_PROFILE env variable to passed string
   export AWS_DEFAULT_PROFILE="$1"
@@ -26,21 +46,18 @@ awssession () { #DEFN login to a server using AWS session manager
 awsloginmanual () { #DEFN login to aws for cloudtool
   passwd=`cat ${HOME}/pass.txt`
   where=0
-  if [[ "$1 $2" == *"eu-west-1"* ]]; then where=1; REGION="eu-west-1"; fi
-  if [[ "$1 $2" == *"emea"* ]]; then where=1; REGION="eu-west-1"; fi
-  if [[ "$1 $2" == *"us-east-1"* ]]; then where=1; REGION="us-east-1"; fi
-  if [[ "$1 $2" == *"amer"* ]]; then where=1; REGION="us-east-1"; fi
-  if [[ "$1 $2" == *"apac"* ]]; then where=1; REGION="ap-southeast-1"; fi
-  if [[ "$1 $2" == *"ap-southeast-1"* ]]; then where=1; REGION="ap-southeast-1"; fi
-  if [[ "$1 $2" == *"sing"* ]]; then where=1; REGION="ap-southeast-1"; fi
-  if [ $where -eq 0 ]; then
-    echo "say emea, amer, apac, sing... I've no idea where to connect to"
+  awsregion $1
+  err=$?
+  if [ "$err" -gt 0 ]; then
     return 1
   fi
-  export AWS_DEFAULT_REGION=$REGION
   unset AWS_PROFILE
   unset AWS_DEFAULT_PROFILE
-  cloud-tool --region "$AWS_DEFAULT_REGION" login --username "mgmt\m0094748" --password "$passwd" | tee ${tmpfs}/ctlogin.txt
+  if [ -z "$2" ]; then
+  	cloud-tool --region "$AWS_DEFAULT_REGION" login --username "mgmt\m0094748" --password "$passwd" | tee ${tmpfs}/ctlogin.txt
+  else
+  	echo $2 | cloud-tool --region "$AWS_DEFAULT_REGION" login --username "mgmt\m0094748" --password "$passwd" | tee ${tmpfs}/ctlogin.txt
+  fi
   sleep 0.1
   profileset=`cat ${tmpfs}/ctlogin.txt | grep "To use this cred" | sed 's_.*aws --profile __' | sed 's_ .*__'`
   echo "Set profile to $profileset. Region is $AWS_DEFAULT_REGION"
@@ -49,10 +66,14 @@ awsloginmanual () { #DEFN login to aws for cloudtool
 
 awsregion () { #DEFN set aws_default_region value
   REGION="$1"
-  if [[ "$1 $2" == *"emea"* ]]; then where=1; REGION="eu-west-1"; fi
-  if [[ "$1 $2" == *"amer"* ]]; then where=1; REGION="us-east-1"; fi
-  if [[ "$1 $2" == *"apac"* ]]; then where=1; REGION="ap-southeast-2"; fi
-  if [[ "$1 $2" == *"sing"* ]]; then where=1; REGION="ap-southeast-1"; fi
+  if [[ "$1" == *"emea"* ]]; then REGION="eu-west-1"; fi
+  if [[ "$1" == *"amer"* ]]; then REGION="us-east-1"; fi
+  if [[ "$1" == *"apac"* ]]; then REGION="ap-southeast-2"; fi
+  if [[ "$1" == *"sing"* ]]; then REGION="ap-southeast-1"; fi
+  if [ -z "$REGION" ]; then
+    echo "pass region or emea, amer, apac, sing... I've no idea where to connect to"
+    return 1
+  fi
   export AWS_DEFAULT_REGION=$REGION
 }
 
@@ -71,27 +92,24 @@ awsamiagec () { #DEFN get the creation date and cache the result. Pull from cach
   else
     echo "$cachecheck" | awk '{print $2}'
   fi
-
 }
 
+
+awsgetopts () { #FEDN recreate the options file
+  echo 0 | awsloginmanual emea | grep ']: ' > ${HOME}/cloudtool-opts.txt
+}
 
 #note options here are piped into login, so login subprocess variables won't hold and must be set again after
 awslogineapnonprod () {
-   echo $ct_eappreprod | awsloginmanual $1
-   awssetnonmanual "`cat ${tmpfs}/AWS_PROFILE.txt`"
-   awsregion $1
+   awsloginmanual $1 $ct_eappreprod
 }
 
 awslogineapprod () {
-  echo $ct_eapprod | awsloginmanual $1
-   awssetnonmanual "`cat ${tmpfs}/AWS_PROFILE.txt`"
-   awsregion $1
+   awsloginmanual $1 $ct_eapprod
 }
 
 awslogindataminer () {
-  echo $ct_dataminer | awsloginmanual $1
-   awssetnonmanual "`cat ${tmpfs}/AWS_PROFILE.txt`"
-   awsregion $1
+   awsloginmanual $1 $ct_dataminer
 }
 
 
@@ -100,9 +118,24 @@ awspass () { #DEFN Show current vault pass
 }
 
 
-awsecsinfo () { #DEFN list of EAP servers
-  echo "Region: $AWS_DEFAULT_REGION"
+awsecsinfo () { #DEFN list of EAP clusters matching given parameters
   ${HOME}/bashfuncs/ecshealth.py $@
+}
+
+awsecsmain() { #DEFN 
+  echo "gathering data..."
+  echo ""
+  (awsecsinfo -region=us-east-1 governance services-windows wwworker a204821-turbo > $tmpfs/ecsus.txt &
+  awsecsinfo -region=eu-west-1 governance services-windows wwworker a204821-turbo > $tmpfs/ecsem.txt &
+  awsecsinfo -region=ap-southeast-1 governance services-windows wwworker a204821-turbo > $tmpfs/ecssi.txt &
+  wait)
+  ${HOME}/bashfuncs/columize.py $tmpfs/ecsus.txt $tmpfs/ecsem.txt $tmpfs/ecssi.txt
+}
+
+awswhatsup() { #DEFN alarm and ecs overview of EAP
+  awsalarms
+  echo ""
+  awsecsmain
 }
 
 awslistserversall () { #DEFN list of EAP servers
@@ -125,10 +158,22 @@ awstunnel2id (){ #DEFN setup a cloud-tool bastion tunnnel for RDP. Pass instance
     cloud-tool --region "$AWS_DEFAULT_REGION" --profile $AWS_PROFILE ssh-tunnel -b $idip -j -q 3389 -r $portalternate
 }
 
+awspf2id (){ #DEFN port forwarding
+    insid=$1
+	portin=$2
+    portalternate=$3
+    idinfo=`aws ec2 describe-instances --instance-ids $insid`
+    idip=`echo "$idinfo" | jq -r ".Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress"`
+    keyname=`aws ec2 describe-instances --instance-id $insid | grep KeyName | awk '{print $2}' | tr -d '",'`
+    aws ec2 get-password-data --instance-id  $insid --priv-launch-key ~/gits/eap_secure/ec2_ssh_keys/${keyname}.pem | jq -r ".PasswordData"
+    cloud-tool --region "$AWS_DEFAULT_REGION" --profile $AWS_PROFILE ssh-tunnel -b $idip -j -q $portin -r $portalternate
+}
+
+
+
 awsrdp2idi (){ #DEFN setup a tunnel to an instance it, and launch remmina remote desktop client
     awstunnel2id $1
     sleep 1
-    remmina -c /home/jumper/lt.remmina
 }
 
 awsalarms (){ #DEFN Get all AWS alarms that match certain strings and output them for several regions
@@ -146,3 +191,5 @@ awsalarms (){ #DEFN Get all AWS alarms that match certain strings and output the
     done
 )
 }
+
+alias ec2nuke="aws ec2 terminate-instances --instance-ids"

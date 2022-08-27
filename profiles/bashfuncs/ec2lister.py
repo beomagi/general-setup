@@ -13,11 +13,12 @@ filter=[]
 args=[]
 
 def tagsearch(tagarray,tagname):
-    for kv in tagarray:
-        key=kv.get("Key")
-        val=kv.get("Value")
-        if key==tagname:
-            return val
+    if tagarray:
+        for kv in tagarray:
+            key=kv.get("Key")
+            val=kv.get("Value")
+            if key==tagname:
+                return val
     return ""
 
 def getallec2():
@@ -59,6 +60,8 @@ def tabledisplay(table):
     for row in table: #determine spacing per column
         curcol=0
         for col in row:
+            if col==None:
+                col=""
             if len(colmax)<(curcol+1):
                 colmax.append(len(col))
             if colmax[curcol]<len(col):
@@ -68,6 +71,7 @@ def tabledisplay(table):
         line=""
         curcol=0
         for col in row:
+            if col==None: col=""
             line+=col.ljust(colmax[curcol],spacepad)+tablepad
             curcol+=1
         print(line)
