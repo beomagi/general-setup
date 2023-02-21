@@ -44,16 +44,17 @@ def getallec2():
 def applyamiinfo(data):
     ami = boto3.client('ec2')
     imagelist=list(amidict.keys())
-    response = ami.describe_images(ImageIds=imagelist)
-    imagelist=response.get('Images',[])
-    for oneimage in imagelist:
-        amidict[oneimage.get('ImageId')]=oneimage.get('CreationDate')
-    for rowchk in range(len(data[0])):
-        if "AMIdatereplace" in data[0][rowchk]:
-            rowcolumn=rowchk
-            break
-    for row in data:
-        row[rowcolumn]=amidict[row[rowcolumn].replace("AMIdatereplace","")]
+    if len(data)>0:
+        response = ami.describe_images(ImageIds=imagelist)
+        imagelist=response.get('Images',[])
+        for oneimage in imagelist:
+            amidict[oneimage.get('ImageId')]=oneimage.get('CreationDate')
+        for rowchk in range(len(data[0])):
+            if "AMIdatereplace" in data[0][rowchk]:
+                rowcolumn=rowchk
+                break
+        for row in data:
+            row[rowcolumn]=amidict[row[rowcolumn].replace("AMIdatereplace","")]
 
 def tabledisplay(table):
     colmax=[]
