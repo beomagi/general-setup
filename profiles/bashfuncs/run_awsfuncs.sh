@@ -44,6 +44,8 @@ awssession () { #DEFN login to a server using AWS session manager
 }
 
 awsloginmanual () { #DEFN login to aws for cloudtool
+  # $1 region
+  # $2 option by number
   passwd=`cat ${HOME}/pass.txt`
   where=0
   awsregion $1
@@ -53,10 +55,12 @@ awsloginmanual () { #DEFN login to aws for cloudtool
   fi
   unset AWS_PROFILE
   unset AWS_DEFAULT_PROFILE
+  profileopt=`cat ~/cloudtool-opts.txt | grep "\[ *$2\]"| awk -F ':' '{print $2}'| awk '{print $1}'`
+  echo "use profile $profileopt"
   if [ -z "$2" ]; then
-  	cloud-tool --region "$AWS_DEFAULT_REGION" login --username "mgmt\m0094748" --password "$passwd" | tee ${tmpfs}/ctlogin.txt
+  	cloud-tool -p $profileopt --region "$AWS_DEFAULT_REGION" login --username "mgmt\m0094748" --password "$passwd" | tee ${tmpfs}/ctlogin.txt
   else
-  	echo $2 | cloud-tool --region "$AWS_DEFAULT_REGION" login --username "mgmt\m0094748" --password "$passwd" | tee ${tmpfs}/ctlogin.txt
+  	echo $2 | cloud-tool -p $profileopt --region "$AWS_DEFAULT_REGION" login --username "mgmt\m0094748" --password "$passwd" | tee ${tmpfs}/ctlogin.txt
   fi
   sleep 0.1
   profileset=`cat ${tmpfs}/ctlogin.txt | grep "To use this cred" | sed 's_.*aws --profile __' | sed 's_ .*__'`
@@ -155,6 +159,7 @@ awstunnel2id (){ #DEFN setup a cloud-tool bastion tunnnel for RDP. Pass instance
     idip=`echo "$idinfo" | jq -r ".Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress"`
     keyname=`aws ec2 describe-instances --instance-id $insid | grep KeyName | awk '{print $2}' | tr -d '",'`
     aws ec2 get-password-data --instance-id  $insid --priv-launch-key ~/gits/eap_secure/ec2_ssh_keys/${keyname}.pem | jq -r ".PasswordData"
+    echo "cloud-tool --region \"$AWS_DEFAULT_REGION\" --profile $AWS_PROFILE ssh-tunnel -b $idip -j -q 3389 -r $portalternate"
     cloud-tool --region "$AWS_DEFAULT_REGION" --profile $AWS_PROFILE ssh-tunnel -b $idip -j -q 3389 -r $portalternate
 }
 

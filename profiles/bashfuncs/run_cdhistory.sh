@@ -6,7 +6,7 @@ fi
 
 cd () { #DEFN In place of regular cd, save current directory to history before changing
   cur=`pwd`
-  builtin cd $@
+  builtin cd "$@"
   if [[ "$?" == "0" ]]; then
     MAXHISTORY=100
     histdata="`cat $ccdhistoryfile`\n$cur"
