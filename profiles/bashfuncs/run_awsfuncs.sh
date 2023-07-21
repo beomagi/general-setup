@@ -43,6 +43,43 @@ awssession () { #DEFN login to a server using AWS session manager
   aws ssm start-session --target $1
 }
 
+awsec2remote () { #DEFN run on instance param1 command param2
+  insec2=$1
+  runcommand=$2
+
+  hook=$(aws ssm send-command --instance-ids "$insec2" --document-name "AWS-RunShellScript" --comment "IP config" --parameters commands="$runcommand" --output json)
+  if [ -z "$hook" ]; then
+    echo "Unable to send command to $insec2"
+    exit 1
+  fi
+  cmdid=$(echo "$hook" | jq -r ".Command.CommandId")
+  while [[ "$status" != "Success" && "$status" != "Failed" ]]; do
+    sleep 1
+    output=`aws ssm get-command-invocation --command-id $cmdid --instance-id $insec2`
+    status=`echo "$output" | jq -r ".Status"`
+    echo "`date` $status"
+  done
+
+  oldsum="+"
+  cursum="-"
+  while true; do
+    output=`aws ssm get-command-invocation --command-id $cmdid --instance-id $insec2`
+    currentoutputsum=$(echo -e "`echo \"$output\" | jq -r ".StandardOutputContent"`" | md5sum | awk '{print $1}')
+    currenterrorssum=$(echo -e "`echo \"$output\" | jq -r ".StandardErrorContent"`" | md5sum | awk '{print $1}')
+    cursum="$currentoutputsum $currenterrorssum"
+    if [[ "$cursum" == "$oldsum" ]]; then
+      break
+    fi
+    oldsum="$cursum"
+    sleep 1
+  done
+
+  echo "###---Output---###"
+  echo -e "`echo \"$output\" | jq -r ".StandardOutputContent"`"
+  echo "###---Errors---###"
+  echo -e "`echo \"$output\" | jq -r ".StandardErrorContent"`"
+}
+
 awsloginmanual () { #DEFN login to aws for cloudtool
   # $1 region
   # $2 option by number
@@ -56,9 +93,10 @@ awsloginmanual () { #DEFN login to aws for cloudtool
   unset AWS_PROFILE
   unset AWS_DEFAULT_PROFILE
   profileopt=`cat ~/cloudtool-opts.txt | grep "\[ *$2\]"| awk -F ':' '{print $2}'| awk '{print $1}'`
+  if [[ "$profileopt" == "" ]]; then profileopt="default"; fi
   echo "use profile $profileopt"
   if [ -z "$2" ]; then
-  	cloud-tool -p $profileopt --region "$AWS_DEFAULT_REGION" login --username "mgmt\m0094748" --password "$passwd" | tee ${tmpfs}/ctlogin.txt
+  	cloud-tool  --region "$AWS_DEFAULT_REGION" login --username "mgmt\m0094748" --password "$passwd" | tee ${tmpfs}/ctlogin.txt
   else
   	echo $2 | cloud-tool -p $profileopt --region "$AWS_DEFAULT_REGION" login --username "mgmt\m0094748" --password "$passwd" | tee ${tmpfs}/ctlogin.txt
   fi
@@ -100,7 +138,7 @@ awsamiagec () { #DEFN get the creation date and cache the result. Pull from cach
 
 
 awsgetopts () { #FEDN recreate the options file
-  echo 0 | awsloginmanual emea | grep ']: ' > ${HOME}/cloudtool-opts.txt
+  awsloginmanual emea 0 | grep ']: ' > ${HOME}/cloudtool-opts.txt
 }
 
 #note options here are piped into login, so login subprocess variables won't hold and must be set again after
