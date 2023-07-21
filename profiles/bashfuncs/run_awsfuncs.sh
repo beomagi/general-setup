@@ -46,12 +46,13 @@ awssession () { #DEFN login to a server using AWS session manager
 awsec2remote () { #DEFN run on instance param1 command param2
   insec2=$1
   runcommand=$2
-
+  #Send command to isntance
   hook=$(aws ssm send-command --instance-ids "$insec2" --document-name "AWS-RunShellScript" --comment "IP config" --parameters commands="$runcommand" --output json)
   if [ -z "$hook" ]; then
     echo "Unable to send command to $insec2"
     exit 1
   fi
+  #Poll for Success/Fail
   cmdid=$(echo "$hook" | jq -r ".Command.CommandId")
   while [[ "$status" != "Success" && "$status" != "Failed" ]]; do
     sleep 1
@@ -59,9 +60,8 @@ awsec2remote () { #DEFN run on instance param1 command param2
     status=`echo "$output" | jq -r ".Status"`
     echo "`date` $status"
   done
-
+  #Output will be written to until execution end, poll till no change.
   oldsum="+"
-  cursum="-"
   while true; do
     output=`aws ssm get-command-invocation --command-id $cmdid --instance-id $insec2`
     currentoutputsum=$(echo -e "`echo \"$output\" | jq -r ".StandardOutputContent"`" | md5sum | awk '{print $1}')
@@ -71,9 +71,9 @@ awsec2remote () { #DEFN run on instance param1 command param2
       break
     fi
     oldsum="$cursum"
-    sleep 1
+    sleep 2
   done
-
+  #Output stdout and stderr
   echo "###---Output---###"
   echo -e "`echo \"$output\" | jq -r ".StandardOutputContent"`"
   echo "###---Errors---###"
