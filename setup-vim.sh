@@ -6,15 +6,3 @@ curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.c
 mkdir ~/.vim/colors
 cp molokaibright2.vim ~/.vim/colors/ 
 
-cd ~
-mkdir .vim
-mkdir gits
-cd gits
-mkdir Shougo
-cd Shougo
-git clone https://github.com/Shougo/neocomplete.vim
-cd neocomplete.vim
-cp -r ./autoload/ ~/.vim
-cp -r ./doc/ ~/.vim
-cp -r ./plugin/ ~/.vim
-cp -r ./test/ ~/.vim
