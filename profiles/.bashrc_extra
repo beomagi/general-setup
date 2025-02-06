@@ -57,3 +57,5 @@ done
 echo
 cd "$curdir"
 cal
+
+if [ -x $TMUX ]; then tmux; fi
