@@ -57,3 +57,4 @@ done
 echo
 cd "$curdir"
 cal
+complete -o default java

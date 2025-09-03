@@ -45,12 +45,25 @@ awssession () { #DEFN login to a server using AWS session manager
 
 awsec2remote () { #DEFN run on instance param1 command param2
   insec2=$1
-  runcommand=$2
+  runcommand="$2"
+  awsshellscript="AWS-RunShellScript"
+  for paramidx in "$@" ; do
+    if [[ "$paramidx" == "--windows" ]] ; then
+      awsshellscript="AWS-RunPowerShellScript"
+    fi
+  done
   #Send command to isntance
-  hook=$(aws ssm send-command --instance-ids "$insec2" --document-name "AWS-RunShellScript" --comment "IP config" --parameters commands="$runcommand" --output json)
+  runcommand_escaped=$(printf '%s\n' "$runcommand" | sed 's/"/\\"/g')  # Escape double quotes
+  #hook=$(aws ssm send-command --instance-ids "$insec2" --document-name "$awsshellscript" --comment "IP config" --parameters commands="$runcommand" --output json)
+  hook=$(aws ssm send-command \
+    --instance-ids "$insec2" \
+    --document-name "$awsshellscript" \
+    --comment "IP config" \
+    --parameters "commands=[\"${runcommand_escaped}\"]" \
+    --output json)
   if [ -z "$hook" ]; then
     echo "Unable to send command to $insec2"
-    exit 1
+    return
   fi
   #Poll for Success/Fail
   cmdid=$(echo "$hook" | jq -r ".Command.CommandId")
@@ -93,17 +106,15 @@ awsloginmanual () { #DEFN login to aws for cloudtool
   unset AWS_PROFILE
   unset AWS_DEFAULT_PROFILE
   profileopt=`cat ~/cloudtool-opts.txt | grep "\[ *$2\]"| awk -F ':' '{print $2}'| awk '{print $1}'`
+  usrroleopt=`cat ~/cloudtool-opts.txt | grep "\[ *$2\]"| awk -F ':' '{print $3}'| awk '{print $1}'`
+  usracctopt=`cat ~/cloudtool-opts.txt | grep "\[ *$2\]"| awk -F ':' '{print $2}'| awk '{print $2}'|tr -d '()'`
   if [[ "$profileopt" == "" ]]; then profileopt="default"; fi
   echo "use profile $profileopt"
-  if [ -z "$2" ]; then
-  	cloud-tool  --region "$AWS_DEFAULT_REGION" login --username "mgmt\m0094748" --password "$passwd" | tee ${tmpfs}/ctlogin.txt
-  else
-  	echo $2 | cloud-tool -p $profileopt --region "$AWS_DEFAULT_REGION" login --username "mgmt\m0094748" --password "$passwd" | tee ${tmpfs}/ctlogin.txt
-  fi
+  echo "cloud-tool -r \"$AWS_DEFAULT_REGION\" -p $profileopt login --username \"mgmt\m0094748\" --password \"\$passwd\" -r \"$usrroleopt\" -a \"$usracctopt\"" 
+  cloud-tool -r "$AWS_DEFAULT_REGION" -p $profileopt login --username "mgmt\m0094748" --password "$passwd" -r "$usrroleopt" -a "$usracctopt" 
   sleep 0.1
-  profileset=`cat ${tmpfs}/ctlogin.txt | grep "To use this cred" | sed 's_.*aws --profile __' | sed 's_ .*__'`
-  echo "Set profile to $profileset. Region is $AWS_DEFAULT_REGION"
-  awssetnonmanual $profileset
+  echo "Set profile to $profileopt. Region is $AWS_DEFAULT_REGION"
+  awssetnonmanual $profileopt
 }
 
 awsregion () { #DEFN set aws_default_region value
@@ -147,7 +158,7 @@ awslogineapnonprod () {
 }
 
 awslogineapprod () {
-   awsloginmanual $1 $ct_eapprod
+  awsloginmanual $1 $ct_eapprod
 }
 
 awslogindataminer () {
@@ -159,9 +170,27 @@ awspass () { #DEFN Show current vault pass
   cat ~/pass.txt
 }
 
+awspclip () { #DEFN Put password in clipboard
+  cat ~/pass.txt | clip.exe
+}
 
 awsecsinfo () { #DEFN list of EAP clusters matching given parameters
   ${HOME}/bashfuncs/ecshealth.py $@
+}
+
+awsecsec2stat () { #DEFN list instances registered to the cluster and determine if the agent is disconnected
+  CLUSTERSUBSTR="$1"
+  while read CLUSTER_NAME; do
+    conec2s=`aws ecs list-container-instances --cluster $CLUSTER_NAME | jq -r ".containerInstanceArns[]"`
+    if [ -z "$conec2s" ]; then
+      echo -e "$CLUSTER_NAME\nNo-instances ***"
+      continue
+    fi
+    allserverstats=`aws ecs describe-container-instances --cluster "$CLUSTER_NAME" --container-instances $conec2s`
+    discoec2s=`echo $allserverstats | jq '.containerInstances[]'| jq -c '{ ec2id:.ec2InstanceId, status: .status, agentConnected: .agentConnected }' | grep false`
+    discoec2list=`echo "$discoec2s" | jq -r ".ec2id"`
+    echo $discoec2list | grep "i-" || echo "no disconnections"
+  done <<< `aws ecs list-clusters | jq -r ".clusterArns[]" | grep $CLUSTERSUBSTR`
 }
 
 awsecsmain() { #DEFN 
